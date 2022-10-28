@@ -108,7 +108,15 @@ class PARSeq(CrossEntropySystem):
 
         if self.decode_ar:
             tgt_in = torch.full((bs, num_steps), self.pad_id, dtype=torch.long, device=self._device)
-            tgt_in[:, 0] = self.bos_id
+            #tgt_in[:, 0] = self.bos_id
+            #print(tgt_in[:, 0])
+            # replace tgt_in[:, 0] with bos_id in a new list tgt_in_1
+            tgt_in_1 = []
+            for i in range(bs):
+                tgt_in_1.append(self.bos_id)
+            tgt_in_1 = torch.tensor(tgt_in_1).to(self._device)
+            tgt_in_2 = tgt_in[:, 1:].clone()
+            tgt_in = torch.cat([tgt_in_1.unsqueeze(1), tgt_in_2], dim=1)
 
             logits = []
             for i in range(num_steps):
@@ -124,7 +132,12 @@ class PARSeq(CrossEntropySystem):
                 logits.append(p_i)
                 if j < num_steps:
                     # greedy decode. add the next token index to the target input
-                    tgt_in[:, j] = p_i.squeeze().argmax(-1)
+                    #tgt_in[:, j] = p_i.squeeze().argmax(-1)
+                    #print(tgt_in_1.unsqueeze(1))
+                    tgt_in_j = tgt_in[:, :j].clone()
+                    tgt_in_j2 = tgt_in[:, j+1:].clone()
+                    tgt_in_j1 = p_i.argmax(-1)
+                    tgt_in = torch.cat([tgt_in_j, tgt_in_j1, tgt_in_j2], dim=1)
                     # Efficient batch decoding: If all output words have at least one EOS token, end decoding.
                     if testing and (tgt_in == self.eos_id).any(dim=-1).all():
                         break
