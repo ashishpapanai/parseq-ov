@@ -82,7 +82,7 @@ class PARSeq(CrossEntropySystem):
     def decode(self, tgt: torch.Tensor, memory: torch.Tensor, tgt_mask: Optional[Tensor] = None,
                tgt_padding_mask: Optional[Tensor] = None, tgt_query: Optional[Tensor] = None,
                tgt_query_mask: Optional[Tensor] = None):
-        N, L = tgt.shape
+        N, L = tgt.shape # N = batch size, L = max label length
         # <bos> stands for the null context. We only supply position information for characters after <bos>.
         null_ctx = self.text_embed(tgt[:, :1])
         tgt_emb = self.pos_queries[:, :L - 1] + self.text_embed(tgt[:, 1:])
@@ -140,7 +140,8 @@ class PARSeq(CrossEntropySystem):
                     tgt_in = torch.cat([tgt_in_j, tgt_in_j1, tgt_in_j2], dim=1)
                     # Efficient batch decoding: If all output words have at least one EOS token, end decoding.
                     if testing and (tgt_in == self.eos_id).any(dim=-1).all():
-                        break
+                        #break
+                        pass
 
             logits = torch.cat(logits, dim=1)
         else:
@@ -161,7 +162,7 @@ class PARSeq(CrossEntropySystem):
                 tgt_out = self.decode(tgt_in, memory, tgt_mask, tgt_padding_mask,
                                       tgt_query=pos_queries, tgt_query_mask=query_mask[:, :tgt_in.shape[1]])
                 logits = self.head(tgt_out)
-
+        #print(logits.shape)
         return logits
 
     def gen_tgt_perms(self, tgt):
